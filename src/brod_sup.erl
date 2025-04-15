@@ -126,7 +126,8 @@ find_client(Client) ->
 init(clients_sup) ->
   %% start and link it to root supervisor
   {ok, _} = brod_kafka_apis:start_link(),
-  Clients = application:get_env(brod, clients, []),
+  % Clients = application:get_env(brod, clients, []),
+  Clients = get_clients(),
   ClientSpecs =
     lists:map(fun({ClientId, Args}) ->
                 is_atom(ClientId) orelse exit({bad_client_id, ClientId}),
@@ -172,3 +173,42 @@ client_spec(Endpoints, ClientId, Config0) ->
 %%% allout-layout: t
 %%% erlang-indent-level: 2
 %%% End:
+get_clients() ->
+  ClientIp  =
+    case os:getenv("KAFKA_IP") of
+      false   -> "127.0.0.1";
+      IpValue -> IpValue
+    end,
+  ClientPort =
+    case os:getenv("KAFKA_PORT") of
+      false     -> 9092;
+      PortValue -> list_to_integer(PortValue)
+    end,
+  [
+    {submit,
+      [ {endpoints, [{ClientIp, ClientPort}]},
+        {query_api_versions, false}
+      ]
+    },
+    {msg_info,
+      [ {endpoints, [{ClientIp, ClientPort}]},
+        {query_api_versions, false}
+      ]
+    },
+    {dlr,
+      [ {endpoints, [{ClientIp, ClientPort}]},
+        {query_api_versions, false}
+      ]
+    },
+    {acked,
+      [ {endpoints, [{ClientIp, ClientPort}]},
+        {query_api_versions, false}
+      ]
+    },
+    {dlrsend,
+      [ {endpoints, [{ClientIp, ClientPort}]},
+        {query_api_versions, false}
+      ]
+    }
+  ].
+
